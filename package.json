@@ -1,0 +1,11 @@
+{
+  "name": "docker-machine-deploy",
+  "version": "1.0.0",
+  "description": "Deploy docker projects with npm using machine",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Amir Raminfar <findamir@gmail.com>",
+  "license": "ISC"
+}
