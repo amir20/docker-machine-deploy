@@ -47,6 +47,10 @@ async function parseDockerEnv({ machine }) {
     const push = await exec("docker-compose -f docker-compose.yml push");
     spinner.succeed(`Images successfully pushed.`);
 
+    spinner.start(`Pulling images to remote machine...`);
+    const pull = await exec("docker-compose -f docker-compose.yml pull", { env });
+    spinner.succeed(`Images successfully pulled.`);
+
     spinner.succeed("Done");
   } catch (error) {
     spinner.fail(error.message);
