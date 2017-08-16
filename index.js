@@ -25,7 +25,7 @@ async function parseDockerEnv({ machine }) {
 
   return env;
 }
-
+const maxBuffer = 1024 * 1024 * 10; // 10mb
 (async function() {
   const spinner = ora();
   try {
@@ -41,19 +41,19 @@ async function parseDockerEnv({ machine }) {
     debug("%O", env);
 
     spinner.start(`Building...`);
-    await exec("docker-compose -f docker-compose.yml build");
+    await exec("docker-compose -f docker-compose.yml build", { maxBuffer });
     spinner.succeed(`Build complete.`);
 
     spinner.start(`Pushing images...`);
-    await exec("docker-compose -f docker-compose.yml push");
+    await exec("docker-compose -f docker-compose.yml push", { maxBuffer });
     spinner.succeed(`Images successfully pushed.`);
 
     spinner.start(`Pulling images to remote machine...`);
-    await exec("docker-compose -f docker-compose.yml pull", { env });
+    await exec("docker-compose -f docker-compose.yml pull", { env, maxBuffer });
     spinner.succeed(`Images successfully pulled.`);
 
     spinner.start(`Deploying new images...`);
-    await exec("docker-compose -f docker-compose.yml up -d --remove-orphans", { env });
+    await exec("docker-compose -f docker-compose.yml up -d --remove-orphans", { env, maxBuffer });
     spinner.succeed(`Images successfully updated.`);
 
     spinner.succeed("Done");
