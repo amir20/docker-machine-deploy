@@ -29,17 +29,23 @@ async function parseDockerEnv({ machine }) {
 (async function() {
   const spinner = ora();
   try {
-    spinner.start();
-    spinner.text = "Parsing config file...";
+    spinner.start("Parsing config file...");
     const config = await parseConfig();
+    spinner.succeed("Config file read successfully.");
     debug("Found config file %O", config);
 
-    spinner.text = `Reading env variables for [${config.machine}]...`;
+    spinner.start(`Reading env variables for [${config.machine}]...`);
     const env = await parseDockerEnv(config);
+    spinner.succeed(`Found machine env variables for [${config.machine}].`);
     debug("%O", env);
 
-    spinner.text = "Executing ps...";
-    const test = await exec("docker ps", { env });
+    spinner.start(`Building...`);
+    const build = await exec("docker-compose -f docker-compose.yml build");
+    spinner.succeed(`Build complete.`);
+
+    spinner.start(`Pushing images...`);
+    const push = await exec("docker-compose -f docker-compose.yml push");
+    spinner.succeed(`Images successfully pushed.`);
 
     spinner.succeed("Done");
   } catch (error) {
