@@ -36,20 +36,25 @@ async function parseDockerEnv({ machine }) {
 
     spinner.start(`Reading env variables for [${config.machine}]...`);
     const env = await parseDockerEnv(config);
+    env.PATH = env.PATH || "/usr/local/bin:/usr/local/sbin:/usr/bin:/bin:/usr/sbin:/sbin";
     spinner.succeed(`Found machine env variables for [${config.machine}].`);
     debug("%O", env);
 
     spinner.start(`Building...`);
-    const build = await exec("docker-compose -f docker-compose.yml build");
+    await exec("docker-compose -f docker-compose.yml build");
     spinner.succeed(`Build complete.`);
 
     spinner.start(`Pushing images...`);
-    const push = await exec("docker-compose -f docker-compose.yml push");
+    await exec("docker-compose -f docker-compose.yml push");
     spinner.succeed(`Images successfully pushed.`);
 
     spinner.start(`Pulling images to remote machine...`);
-    const pull = await exec("docker-compose -f docker-compose.yml pull", { env });
+    await exec("docker-compose -f docker-compose.yml pull", { env });
     spinner.succeed(`Images successfully pulled.`);
+
+    spinner.start(`Deploying new images...`);
+    await exec("docker-compose -f docker-compose.yml up -d --remove-orphans", { env });
+    spinner.succeed(`Images successfully updated.`);
 
     spinner.succeed("Done");
   } catch (error) {
