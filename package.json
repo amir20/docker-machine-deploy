@@ -1,6 +1,6 @@
 {
   "name": "docker-machine-deploy",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Deploy docker projects with npm using machine",
   "bin": {
     "docker-machine-deploy": "./index.js"
