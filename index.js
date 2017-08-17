@@ -25,6 +25,8 @@ async function parseDockerEnv({ machine }) {
 
   return env;
 }
+
+
 const maxBuffer = 1024 * 1024 * 10; // 10mb
 (async function() {
   const spinner = ora();
