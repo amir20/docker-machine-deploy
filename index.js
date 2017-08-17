@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const ora = require("ora");
+const ProgressBar = require("progress");
 const { spawn, exec } = require("child-process-promise");
 const debug = require("debug")("docker-machine-deploy");
 const { promisify } = require("util");
@@ -26,6 +27,49 @@ async function parseDockerEnv({ machine }) {
   return env;
 }
 
+async function dockerBuild() {
+  const buildRe = /^Building .+$/m;
+  const stepRe = /^Step (\d+)\/(\d+) : .+/m;
+
+  const promise = spawn("docker-compose", ["build"]);
+  const { childProcess } = promise;
+
+  let progress;
+  let buildingMessage;
+
+  childProcess.stderr.on("data", data => {
+    const line = data.toString();
+    const match = line.match(buildRe);
+
+    if (match) {      
+      buildingMessage = line.trim();
+      progress = null;
+    }
+  });
+
+  childProcess.stdout.on("data", data => {
+    const line = data.toString();
+    const match = line.match(stepRe);
+
+    if (match) {
+      [, step, total] = match;
+      step = parseInt(step);
+      total = parseInt(total);
+
+      if (!progress) {        
+        progress = new ProgressBar(buildingMessage + " :bar :current/:total", {
+          total,
+          width: 40
+        });
+      } else {
+        progress.curr = step;
+        progress.render();
+      }
+    }
+  });
+
+  return promise;
+}
 
 const maxBuffer = 1024 * 1024 * 10; // 10mb
 (async function() {
@@ -42,9 +86,8 @@ const maxBuffer = 1024 * 1024 * 10; // 10mb
     spinner.succeed(`Found machine env variables for [${config.machine}].`);
     debug("%O", env);
 
-    spinner.start(`Building...`);
-    await exec("docker-compose -f docker-compose.yml build", { maxBuffer });
-    spinner.succeed(`Build complete.`);
+    await dockerBuild();
+    spinner.succeed(`Successfully built images.`);
 
     spinner.start(`Pushing images...`);
     await exec("docker-compose -f docker-compose.yml push", { maxBuffer });
