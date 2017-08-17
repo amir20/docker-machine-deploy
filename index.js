@@ -41,7 +41,7 @@ async function dockerBuild() {
     const line = data.toString();
     const match = line.match(buildRe);
 
-    if (match) {      
+    if (match) {
       buildingMessage = line.trim();
       progress = null;
     }
@@ -56,7 +56,7 @@ async function dockerBuild() {
       step = parseInt(step);
       total = parseInt(total);
 
-      if (!progress) {        
+      if (!progress) {
         progress = new ProgressBar(buildingMessage + " :bar :current/:total", {
           total,
           width: 40
