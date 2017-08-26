@@ -100,7 +100,10 @@ const maxBuffer = 1024 * 1024 * 10; // 10mb
     spinner.succeed('Images successfully pulled.');
 
     spinner.start('Deploying new images...');
-    await exec('docker-compose -f docker-compose.yml up -d --remove-orphans', { env, maxBuffer });
+    await exec('docker-compose -f docker-compose.yml up -d --remove-orphans', {
+      env,
+      maxBuffer,
+    });
     spinner.succeed('Images successfully updated.');
 
     spinner.succeed('Done');
