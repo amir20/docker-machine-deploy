@@ -92,6 +92,16 @@ async function run(command, args, options, config) {
   await promise;
 }
 
+const parseComposeFiles = ({ 'additional-compose-files': composeFiles }) => {
+  if (composeFiles) {
+    return ['docker-compose.yml', ...composeFiles].reduce(
+      (params, p) => params.concat(['-f', p]),
+      [],
+    );
+  }
+  return ['-f', 'docker-compose.yml'];
+};
+
 (async () => {
   const spinner = ora();
   try {
@@ -126,9 +136,10 @@ async function run(command, args, options, config) {
     spinner.succeed('Images successfully pulled.');
 
     spinner.start('Deploying new images...');
+    const composeFiles = parseComposeFiles(config);
     await run(
       'docker-compose',
-      ['-f', 'docker-compose.yml', 'pull', 'up', '-d', '--remove-orphans'],
+      [...composeFiles, 'pull', 'up', '-d', '--remove-orphans'],
       {
         env,
         maxBuffer,
