@@ -29,11 +29,13 @@ async function parseDockerEnv({ machine }) {
   return env;
 }
 
-async function dockerBuild() {
+const projectName = ({ name }) => (name ? `-p ${name}` : '');
+
+async function dockerBuild(config) {
   const buildRe = /^Building .+$/m;
   const stepRe = /^Step (\d+)\/(\d+) : .+/m;
 
-  const promise = spawn('docker-compose', ['build']);
+  const promise = spawn('docker-compose', [projectName(config), 'build']);
   const { childProcess } = promise;
 
   let progress;
@@ -41,6 +43,7 @@ async function dockerBuild() {
 
   childProcess.stderr.on('data', (data) => {
     const line = data.toString();
+    debug(line);
     const match = line.match(buildRe);
 
     if (match) {
@@ -51,6 +54,7 @@ async function dockerBuild() {
 
   childProcess.stdout.on('data', (data) => {
     const line = data.toString();
+    debug(line);
     const match = line.match(stepRe);
 
     if (match) {
@@ -74,6 +78,20 @@ async function dockerBuild() {
 }
 
 const maxBuffer = 1024 * 1024 * 10; // 10mb
+
+async function run(command, args, options, config) {
+  debug(`${command} ${[projectName(config), ...args].join(' ')}`);
+  const promise = spawn(command, [projectName(config), ...args], options);
+  const { childProcess } = promise;
+
+  if (debug.enabled) {
+    childProcess.stderr.on('data', data => debug(data.toString()));
+    childProcess.stdout.on('data', data => debug(data.toString()));
+  }
+
+  await promise;
+}
+
 (async () => {
   const spinner = ora();
   try {
@@ -88,22 +106,35 @@ const maxBuffer = 1024 * 1024 * 10; // 10mb
     spinner.succeed(`Found machine env variables for [${config.machine}].`);
     debug('%O', env);
 
-    await dockerBuild();
+    await dockerBuild(config);
     spinner.succeed('Successfully built images.');
 
     spinner.start('Pushing images...');
-    await exec('docker-compose -f docker-compose.yml push', { maxBuffer });
+    await run('docker-compose', ['-f', 'docker-compose.yml', 'push'], { maxBuffer }, config);
     spinner.succeed('Images successfully pushed.');
 
     spinner.start('Pulling images to remote machine...');
-    await exec('docker-compose -f docker-compose.yml pull', { env, maxBuffer });
+    await run(
+      'docker-compose',
+      ['-f', 'docker-compose.yml', 'pull'],
+      {
+        env,
+        maxBuffer,
+      },
+      config,
+    );
     spinner.succeed('Images successfully pulled.');
 
     spinner.start('Deploying new images...');
-    await exec('docker-compose -f docker-compose.yml up -d --remove-orphans', {
-      env,
-      maxBuffer,
-    });
+    await run(
+      'docker-compose',
+      ['-f', 'docker-compose.yml', 'pull', 'up', '-d', '--remove-orphans'],
+      {
+        env,
+        maxBuffer,
+      },
+      config,
+    );
     spinner.succeed('Images successfully updated.');
 
     spinner.succeed('Done');
