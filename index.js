@@ -139,7 +139,7 @@ const parseComposeFiles = ({ 'additional-compose-files': composeFiles }) => {
     const composeFiles = parseComposeFiles(config);
     await run(
       'docker-compose',
-      [...composeFiles, 'pull', 'up', '-d', '--remove-orphans'],
+      [...composeFiles, 'up', '-d', '--remove-orphans'],
       {
         env,
         maxBuffer,
